@@ -1,0 +1,367 @@
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import jp.fit.jc.it.BorderView;
+import jp.fit.jc.it.CombinedView;
+import jp.fit.jc.it.PPanel2;
+
+public class Sukoro extends JFrame implements ActionListener{
+	JButton reset;
+	JButton ans;
+	JButton next;
+	JButton lv1;
+	JButton lv2;
+	JButton lv3;
+	JButton lv4;
+	JButton lv5;
+	SukoroPanel panel;
+	static String XMLFileName = "Sukoro.xml";
+	JLabel timeLabel;
+
+	static int number;
+	String question[];
+	String answer[];
+	Element doc; // XML ファイルの内容が入る。
+	Element xMondai; // XML形式の問題
+	Timer timer; // タイマークラス
+	MyTime rest; // 残り時間クラス
+	TimerUtil task; // タイマーの実行タスク
+
+	public Sukoro(String xml) {//コンストラクタ
+		super();
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationByPlatform(true);
+		setLayout(new BorderLayout());
+
+		setSize(700,700);//フレームのサイズ
+
+		doc = ReadDocument.read(xml);
+		number = 0;
+
+		NodeList nl = doc.getElementsByTagName("title");
+		setTitle(nl.item(0).getFirstChild().getNodeValue());
+
+		xMondai = (Element) doc.getElementsByTagName("Mondai").item(number);
+		System.out.println(number);
+		question = getStrings(xMondai,"question"); // 問題を取り出す。
+		answer = getStrings(xMondai,"answer");    // 答えを取り出す
+
+		for(int i = 0;i <question.length; i++)
+			System.out.println("question="+question[i]);
+		for(int i = 0;i <answer.length; i++)
+			System.out.println("answer="+answer[i]);
+		int w = question[0].length(); // 横幅
+		int h = question.length;      // 行数
+		panel = new SukoroPanel(w,h,this); // パネルを作る
+
+		panel.setMondai(question); // 問題をセットする
+		add(panel, BorderLayout.CENTER);
+
+		JPanel in = new JPanel();//説明のラベルと、難易度のボタンを入れるパネル
+		in. setLayout(new GridLayout(9, 1));
+
+		JLabel rules = new JLabel("＜ルール説明＞");
+		JLabel rules1 = new JLabel("　1. 盤面のいくつかのマスに１から４の数字のどれかを入れましょう。");
+		JLabel rules2 = new JLabel("　2. 盤面の数字は、縦横に隣り合うマスのうち、数字が入るマスの数字を表しています。");
+		JLabel rules3 = new JLabel("　3. 同じ数字を縦横の連続させてはいけません。");
+		JLabel rules4 = new JLabel("　4. 全ての数字は縦横にひとつながりになっていなければいけません。");
+		rules.setHorizontalAlignment(JLabel.LEFT);//左寄せにする
+		rules1.setHorizontalAlignment(JLabel.LEFT);
+		rules2.setHorizontalAlignment(JLabel.LEFT);
+		rules3.setHorizontalAlignment(JLabel.LEFT);
+		rules4.setHorizontalAlignment(JLabel.LEFT);
+		rules.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 20));//文字の大きさ、フォントの指定
+		rules1.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		rules2.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		rules3.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		rules4.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+
+		JLabel des = new JLabel("＜操作説明＞");
+		JLabel des1 = new JLabel("　マウス操作で数字を入れてください。以下の順で数字を入力することができます。");
+		JLabel des2 = new JLabel("　左クリック：『１→２→３→４→空白』");
+		JLabel des3 = new JLabel("　右クリック：『４→３→２→１→空白』");
+		des.setHorizontalAlignment(JLabel.LEFT);
+		des1.setHorizontalAlignment(JLabel.LEFT);
+		des2.setHorizontalAlignment(JLabel.LEFT);
+		des3.setHorizontalAlignment(JLabel.LEFT);
+		des.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 20));
+		des1.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		des2.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		des3.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+
+
+		in.add(rules);
+		in.add(rules1);
+		in.add(rules2);
+		in.add(rules3);
+		in.add(rules4);
+		in.add(des);
+		in.add(des1);
+		in.add(des2);
+		in.add(des3);
+
+		add(in, BorderLayout.NORTH);//フレームの上側に配置
+
+		JPanel btnset = new JPanel();//ゲームで使用するボタン、タイムを表示するラベルを配置するパネル
+		btnset.setLayout( new GridLayout(4, 1));
+		reset = new JButton("リセット");
+		reset.addActionListener(this);
+		ans = new JButton("解答");
+		ans.addActionListener(this);
+		next = new JButton("次の問題");
+		next.addActionListener(this);
+		timeLabel = new JLabel("Time");
+		timeLabel.setHorizontalAlignment(JLabel.CENTER);
+
+		btnset.add(reset);
+		btnset.add(ans);
+		btnset.add(next);
+		btnset.add(timeLabel);
+
+		add(btnset, BorderLayout.WEST);//フレームの左側に配置
+		
+		JPanel lv = new JPanel();
+		lv.setLayout(new GridLayout(5, 1));
+		lv1 = new JButton("Leven 1");
+		lv1.addActionListener(this);
+		lv2 = new JButton("Leven 2");
+		lv2.addActionListener(this);
+		lv3 = new JButton("Leven 3");
+		lv3.addActionListener(this);
+		lv4 = new JButton("Leven 4");
+		lv4.addActionListener(this);
+		lv5 = new JButton("Leven 5");
+		lv5.addActionListener(this);
+		
+		lv.add(lv1);
+		lv.add(lv2);
+		lv.add(lv3);
+		lv.add(lv4);
+		lv.add(lv5);
+		
+		add(lv, BorderLayout.EAST);
+
+		setUpTimer();
+	}
+	public static void main(String[] args) {//メインルーチン
+		Sukoro frame = new Sukoro(XMLFileName);
+		frame.setVisible(true);
+	}
+	public void actionPerformed(ActionEvent e) {//ボタンが押された時の動作
+		JButton btn = (JButton)e.getSource();//押されたボタンを得る
+		if(btn == lv1) {
+			
+			number = 0;
+			goNext1();
+		} else if(btn == lv2) {
+			number = 1;
+			goNext1();
+		} else if(btn == lv3) {
+			number = 2;
+			goNext1();
+		} else if(btn == lv4) {
+			number = 3;
+			goNext1();
+		} else if(btn == lv5) {
+			number = 4;
+			goNext1();
+		}
+		if(btn == reset) {//リセットの時
+			int ret = JOptionPane.showConfirmDialog(null,
+					"本当にリセットしますか？", "リセット",JOptionPane.OK_CANCEL_OPTION,
+					JOptionPane.ERROR_MESSAGE);
+			if(ret==JOptionPane.OK_OPTION) {
+				panel.setMondai(question);
+				repaint();
+			}
+		}else if(btn == ans) {//解答の時
+			String[] chare = panel.getCharaenge();
+			for(int i = 0;i <chare.length; i++)
+				System.out.println("chare="+chare[i]);
+			if(checkAnswer(answer,chare)) { // 正解
+				stop();
+				int ret = JOptionPane.showConfirmDialog(null
+						, "おめでとう！次の問題に移るよ？"
+						, "正解！"
+						, JOptionPane.OK_OPTION);
+				if(ret ==JOptionPane.OK_OPTION) {
+					goNext();
+				}
+			}else {//不正解
+				JOptionPane.showInternalMessageDialog(null
+						, "残念！どこか間違ってるよ！問題に戻るよ？"
+						, "不正解！"
+						, JOptionPane.INFORMATION_MESSAGE);
+			}
+		}else if(btn == next) {
+			goNext(); // 次の問題に移る。
+
+		}
+	}
+
+	String[] getStrings(Element mondai,String tag) {
+		String s[];
+		NodeList nl = mondai.getElementsByTagName(tag);
+		s = new String[nl.getLength()];
+		for(int i = 0; i < nl.getLength() ;i++) {
+			try {
+				s[i] = nl.item(i).getFirstChild().getNodeValue();
+			} catch(Exception e) {
+				s[i] = "";
+			}
+		}
+		return s;
+	}
+	void goNext() {
+		dispose();
+		Sukoro next = new Sukoro(XMLFileName);
+		next.setVisible(true);
+		NodeList mn = doc.getElementsByTagName("Mondai"); // 全ての問題を取り出しておく
+		number++;                       // 問題番号を増やす
+		if(number >= mn.getLength()) {  // 最後の問題を通り過ぎたら最初に戻す。
+			number = 0;
+		}
+		// 番号の問題を取り出してセットする。
+		xMondai = (Element) mn.item(number);
+		question = getStrings(xMondai,"question"); // 問題を取り出す。
+		answer  = getStrings(xMondai,"answer");    // 答えを取り出す
+		System.out.println(number);
+		int w = question[number].length(); // 横幅
+		int h = question.length;      // 行数
+		panel = new SukoroPanel(w,h,this); // パネルを作る
+
+		panel.setMondai(question); // 問題をセットする。
+
+		repaint();
+	}
+	void goNext1() {
+		dispose();
+		Sukoro next = new Sukoro(XMLFileName);
+		next.setVisible(true);
+		NodeList mn = doc.getElementsByTagName("Mondai"); // 全ての問題を取り出しておく
+		xMondai = (Element) mn.item(number);
+		question = getStrings(xMondai,"question"); // 問題を取り出す。
+		answer  = getStrings(xMondai,"answer");    // 答えを取り出す
+		System.out.println(number);
+		int w = question[number].length(); // 横幅
+		int h = question.length;      // 行数
+		panel = new SukoroPanel(w,h,this); // パネルを作る
+
+		panel.setMondai(question); // 問題をセットする。
+
+		repaint();
+	}
+	boolean checkAnswer(String[] a, String[] b) {//答えと回答を比べる
+		if(a.length != b.length) { // そもそも大きさが違う
+			return false;
+		}
+		for(int i = 0; i < a.length; i++) { // １行ごとに比較する
+			if(!a[i] .equals (b[i])) {
+				System.out.println(a[i]);
+				System.out.println(b[i]);
+				return false;               // 違ったら、偽を返す
+			}
+		}
+		return true;    // 全ての行が一致した。
+	}
+	public void setUpTimer() {//タイマーの設定
+		timer = new Timer();
+		rest = new MyTime();
+		start();
+	}
+
+	// タイマーを動かす。タイマーのスケジュールも行う。
+	public void start() {
+    	if(task == null) task = new TimerUtil(rest,timeLabel);
+        timer.schedule(task, 0, 1000); // 1秒おきにrunメソッド実行
+    }
+
+    public void stop() { // タイマーの終了
+        task.cancel();
+        task = null;
+    }
+}
+class TimerUtil extends TimerTask {
+	MyTime time; // 管理する時間
+	JLabel label; // 時間表示用ラベル
+	public TimerUtil(MyTime t,JLabel l) {
+		time = t;
+		label = l;
+	}
+	public void run() {
+		time.countdown(); // カウントダウンと表示
+		label.setText(""+time.getSecond());
+	} // タイマーの実行
+
+}
+
+class MyTime { //　残り時間クラス
+	int second; // 残り時間
+	MyTime() {this(1200);}; // 引数なしコンストラクタ
+	MyTime(int t) { second = t; } // コンストラクタ
+	public void countdown() { // 1秒ごとに減らす
+		if(second > 0) {
+			second--;
+		} else {
+			System.exit(0);
+		}
+	}
+	int getSecond() {
+		return second; // 時間を得る
+	}
+}
+class SukoroPanel extends PPanel2 implements MouseListener{
+	CombinedView cview;
+
+	SukoroPanel(int x, int y, JFrame f) {
+		super(x, y, f);
+		cview = new CombinedView(this);
+		addPView(cview);
+		addMouseListener(this);
+		addPView(new BorderView(this, BorderView.FULL_BORDER, Color.black));
+		cview.setDrawCharByString("１２３４①②③④");
+	}
+	String[] getCharaenge() {
+	   	return cview.getCharenge();
+	}
+	void setMondai(String s[]) {
+
+    	cview.setCharByString(s);
+    }
+	public void mouseClicked(MouseEvent e) {//クリックされた時の動作
+		Point p = getUnit(e);  // クリックされたユニットを得る。
+		int btn1 = e.getButton();
+		if(btn1 == MouseEvent.BUTTON1) {
+			cview.setRotateChars("１２３４．");
+		} else if(btn1 == MouseEvent.BUTTON3) {
+			cview.setRotateChars("４３２１．");
+	    }
+		cview.rotateCharacter(p,false); // 文字を変更する
+		frame.repaint();
+	}
+
+	public void mousePressed(MouseEvent e) {}
+	public void mouseReleased(MouseEvent e) {}
+
+	public void mouseEntered(MouseEvent e) {}
+	public void mouseExited(MouseEvent e) {}
+
+}

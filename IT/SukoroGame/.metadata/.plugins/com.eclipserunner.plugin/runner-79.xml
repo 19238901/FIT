@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<runner version="1.0.0">
+    <category expanded="true" name="カテゴリーなし">
+        <launchConfiguration bookmark="false" defaultLaunchMode="run" name="Sukoro"/>
+        <launchConfiguration bookmark="false" defaultLaunchMode="run" name="Sukoro.xml"/>
+        <launchConfiguration bookmark="false" defaultLaunchMode="run" name="Sukoro.xml (1)"/>
+    </category>
+</runner>

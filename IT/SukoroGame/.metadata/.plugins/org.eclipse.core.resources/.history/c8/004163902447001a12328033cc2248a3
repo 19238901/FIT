@@ -1,0 +1,321 @@
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import jp.fit.jc.it.BorderView;
+import jp.fit.jc.it.CombinedView;
+import jp.fit.jc.it.PPanel2;
+
+public class Sukoro extends JFrame implements ActionListener{
+	JButton reset;
+	JButton ans;
+	JButton lv1;
+	JButton lv2;
+	JButton lv3;
+	JButton lv4;
+	SukoroPanel panel;
+	static String XMLFileName = "Sukoro.xml";
+	JLabel timeLabel;
+	JLabel cc;
+
+	static int number;
+	String question[];
+	String answer[];
+	Element doc; // XML ファイルの内容が入る。
+	Element xMondai; // XML形式の問題(1問のみ)
+	Timer timer; // タイマークラス
+	MyTime rest; // 残り時間クラス
+	TimerUtil task; // タイマーの実行タスク
+
+	public Sukoro(String xml) {
+		super();
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationByPlatform(true);
+		setLayout(new BorderLayout());
+
+		setSize(1500,800);
+
+		JPanel in = new JPanel();
+		in. setLayout(new GridLayout(10, 1));
+
+		JLabel rules = new JLabel("＜ルール説明＞");
+		JLabel rules1 = new JLabel("　1. 盤面のいくつかのマスに１から４の数字のどれかを入れましょう。");
+		JLabel rules2 = new JLabel("　2. 盤面の数字は、縦横に隣り合うマスのうち、数字が入るマスの数字を表しています。");
+		JLabel rules3 = new JLabel("　3. 同じ数字を縦横の連続させてはいけません。");
+		JLabel rules4 = new JLabel("　4. 全ての数字は縦横にひとつながりになっていなければいけません。");
+		rules.setHorizontalAlignment(JLabel.LEFT);
+		rules1.setHorizontalAlignment(JLabel.LEFT);
+		rules2.setHorizontalAlignment(JLabel.LEFT);
+		rules3.setHorizontalAlignment(JLabel.LEFT);
+		rules4.setHorizontalAlignment(JLabel.LEFT);
+		rules.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 20));
+		rules1.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		rules2.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		rules3.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		rules4.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+
+		JLabel des = new JLabel("＜操作説明＞");
+		JLabel des1 = new JLabel("　マウス操作で数字を入れてください。以下の順で数字を入力することができます。");
+		JLabel des2 = new JLabel("　左クリック：『１→２→３→４→空白』");
+		JLabel des3 = new JLabel("　右クリック：『４→３→２→１→空白』");
+		des.setHorizontalAlignment(JLabel.LEFT);
+		des1.setHorizontalAlignment(JLabel.LEFT);
+		des2.setHorizontalAlignment(JLabel.LEFT);
+		des3.setHorizontalAlignment(JLabel.LEFT);
+		des.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 20));
+		des1.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		des2.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		des3.setFont(new Font("UDディジタル教科書体", Font.PLAIN, 16));
+		
+		JPanel btnlv = new JPanel();
+		btnlv.setLayout(new GridLayout(1, 4));
+		lv1 = new JButton("Level 1");
+		lv1.addActionListener(this);
+		lv2 = new JButton("Level 2");
+		lv2.addActionListener(this);
+		lv3 = new JButton("Level 3");
+		lv3.addActionListener(this);
+		lv4 = new JButton("Level 4");
+		lv4.addActionListener(this);
+		btnlv.add(lv1);
+		btnlv.add(lv2);
+		btnlv.add(lv3);
+		btnlv.add(lv4);
+
+		in.add(rules);
+		in.add(rules1);
+		in.add(rules2);
+		in.add(rules3);
+		in.add(rules4);
+		in.add(des);
+		in.add(des1);
+		in.add(des2);
+		in.add(des3);
+		in.add(btnlv);
+
+		add(in, BorderLayout.NORTH);
+
+		JPanel btnset = new JPanel();
+		btnset.setLayout( new GridLayout(4, 2));
+		reset = new JButton("リセット");
+		reset.addActionListener(this);
+		ans = new JButton("解答");
+		ans.addActionListener(this);
+		timeLabel = new JLabel("残り時間");
+		timeLabel.setHorizontalAlignment(JLabel.CENTER);
+		cc = new JLabel("回数");
+		cc.setHorizontalAlignment(JLabel.CENTER);
+
+		btnset.add(reset);
+		btnset.add(ans);
+		btnset.add(timeLabel);
+		btnset.add(cc);
+
+		add(btnset, BorderLayout.WEST);
+
+		
+	}
+	public static void main(String[] args) {
+		Sukoro frame = new Sukoro(XMLFileName);
+		frame.setVisible(true);
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		JButton btn = (JButton)e.getSource();
+		if(btn == lv1) {
+			Sukoro lv1 = new Sukoro(XMLFileName);
+			
+			setM(XMLFileName);
+			lv1.setVisible(true);
+
+		} else if(btn == lv2) {
+			number = 1;
+			setM(XMLFileName);
+			repaint();
+			setUpTimer(); // タイマーの設定を行う
+		} else if(btn == lv3) {
+			number = 2;
+			setM(XMLFileName);
+			repaint();
+			setUpTimer(); // タイマーの設定を行う
+		} else if(btn == lv4) {
+			number = 3;
+			setM(XMLFileName);
+			repaint();
+			setUpTimer(); // タイマーの設定を行う
+		}
+		if(btn == reset) {
+			int ret = JOptionPane.showConfirmDialog(null,
+					"本当にリセットしますか？", "リセット",JOptionPane.OK_CANCEL_OPTION,
+					JOptionPane.ERROR_MESSAGE);
+			if(ret==JOptionPane.OK_OPTION) {
+				panel.setMondai(question);
+				repaint();
+			}
+		}else if(btn == ans) {
+			String[] chare = panel.getCharaenge();
+			for(int i = 0;i <chare.length; i++)
+				System.out.println("chare="+chare[i]);
+			if(checkAnswer(answer,chare)) { // 正解 // 単純なメッセージより、次の問題に移るよ、を入れたほうが良い
+				stop();
+				int ret = JOptionPane.showConfirmDialog(null
+						, "正解！おめでとう！"
+						, "正解！"
+						, JOptionPane.OK_OPTION);
+				if(ret ==JOptionPane.OK_OPTION) {
+					// 了解を選択した時の処理
+				}
+			}else {
+				JOptionPane.showInternalMessageDialog(null
+						, "残念！どこか間違ってるよ！問題に戻るよ？"
+						, "不正解！"
+						, JOptionPane.INFORMATION_MESSAGE);
+			}
+		}
+	}
+
+	String[] getStrings(Element mondai,String tag) {
+		String s[];
+		NodeList nl = mondai.getElementsByTagName(tag);
+		s = new String[nl.getLength()];
+		for(int i = 0; i < nl.getLength() ;i++) {
+			try {
+				s[i] = nl.item(i).getFirstChild().getNodeValue();
+			} catch(Exception e) {
+				s[i] = "";
+			}
+		}
+		return s;
+	}
+	boolean checkAnswer(String[] a, String[] b) {
+		if(a.length != b.length) { // そもそも大きさが違う
+			return false;
+		}
+		for(int i = 0; i < a.length; i++) { // １行ごとに比較する
+			if(!a[i] .equals (b[i])) {
+				return false;               // 違ったら、偽を返す
+			}
+		}
+		return true;    // 全ての行が一致した。
+	}
+	public void setM(String xml) {
+		doc = ReadDocument.read(xml);
+
+		NodeList nl = doc.getElementsByTagName("title");
+		setTitle(nl.item(0).getFirstChild().getNodeValue());
+
+		xMondai = (Element) doc.getElementsByTagName("Mondai").item(number);
+		question = getStrings(xMondai,"question"); // 問題を取り出す。
+		answer = getStrings(xMondai,"answer");    // 答えを取り出す
+
+		int w = question[number].length(); // 横幅
+		int h = question.length;      // 行数
+		panel = new SukoroPanel(w,h,this); // パネルを作る
+
+		panel.setMondai(question); // 問題をセットする
+		add(panel, BorderLayout.CENTER);
+
+		setUpTimer(); // タイマーの設定を行う
+	}
+	public void setUpTimer() {
+		timer = new Timer();
+		rest = new MyTime();
+		start();
+	}
+
+	// タイマーを動かす。タイマーのスケジュールも行う。
+	public void start() {
+    	if(task == null) task = new TimerUtil(rest,timeLabel);
+        timer.schedule(task, 0, 1000); // 1秒おきにrunメソッド実行
+    }
+
+    public void stop() { // タイマーの終了
+        task.cancel();
+        task = null;
+    }
+}
+class TimerUtil extends TimerTask {
+	MyTime time; // 管理する時間
+	JLabel label; // 時間表示用ラベル
+	public TimerUtil(MyTime t,JLabel l) {
+		time = t;
+		label = l;
+	}
+	public void run() {
+		time.coundup(); // カウントダウンと表示
+		label.setText(""+time.getSecond());
+	} // タイマーの実行
+
+}
+
+class MyTime { //　残り時間クラス
+	int second; // 残り時間
+	MyTime() {this(0);}; // 引数なしコンストラクタ
+	MyTime(int t) { second = t; } // コンストラクタ
+	public void coundup() { // 1秒ごとに増やす
+		if(second >= 0) second++;
+	}
+	int getSecond() { return second; } // 時間を得る
+}
+class SukoroPanel extends PPanel2 implements MouseListener{
+	CombinedView cview;
+
+	SukoroPanel(int x, int y, JFrame f) {
+		super(x,y,f);
+		cview = new CombinedView(this);
+		addPView(cview);
+		addMouseListener(this);
+		addPView(new BorderView(this, BorderView.FULL_BORDER, Color.black));
+		cview.setDrawCharByString("１２３４①②③④○");
+	}
+	String[] getCharaenge() {
+	   	return cview.getCharenge();
+	}
+	public void setCharByString(String s[]) {
+		cview.setCharByString(s); // 文字をセットする。
+	}
+	void setMondai(String[] m) {
+    	cview.setCharByString(m);
+    }
+	void setAnswer(String[] m) {
+    	cview.setCharByString(m);
+	}
+	public void mouseClicked(MouseEvent e) {
+		Point p = getUnit(e);  // クリックされたユニットを得る。
+		int count = 0;
+		count = count + 1;
+		int btn1 = e.getButton();
+		if(btn1 == MouseEvent.BUTTON1) {
+			cview.setRotateChars("１２３４．");
+		} else if(btn1 == MouseEvent.BUTTON3) {
+			cview.setRotateChars("４３２１．");
+	    }
+
+		cview.rotateCharacter(p,false); // 文字を変更する
+		frame.repaint();
+	}
+
+	public void mousePressed(MouseEvent e) {}
+	public void mouseReleased(MouseEvent e) {}
+
+	public void mouseEntered(MouseEvent e) {}
+	public void mouseExited(MouseEvent e) {}
+
+}
